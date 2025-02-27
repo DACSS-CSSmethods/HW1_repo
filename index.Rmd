@@ -1,0 +1,46 @@
+---
+title: "hw1_exploring_spatial_data_zo"
+output: html_document
+date: "2025-02-27"
+---
+
+```{r}
+rm(list = ls())
+library(sf)
+mapLink='https://github.com/DACSS-CSSmethods/HW1_repo/raw/refs/heads/main/countriesCIA.gpkg'
+
+countriesCIA=read_sf(mapLink, layer='cia')
+worldBorders=read_sf(mapLink, layer='border')
+```
+
+```{r}
+interestingCountries = countriesCIA[
+  (countriesCIA$tobacco_code == 0) & 
+  (countriesCIA$alcohol_code == 0) & 
+  (countriesCIA$obesity_code == 0),
+]
+```
+
+```{r}
+library(ggplot2)
+base=ggplot(data = worldBorders)+geom_sf(fill='grey',color=NA) + theme_linedraw()
+base + geom_sf(data=countriesCIA,
+               aes(fill=obesity_levels),color=NA) + 
+               labs(fill="Level",
+                    title='Obesity Levels')+
+                    scale_fill_brewer(palette = "PiYG",direction = -1)
+```
+
+```{r}
+maskToClip=as.vector(st_bbox(interestingCountries))
+
+base + geom_sf(data=interestingCountries,fill='yellow') + 
+  coord_sf(xlim = c(maskToClip[1],maskToClip[3]), 
+           ylim = c(maskToClip[2],maskToClip[4])) +
+    geom_sf_text(data=interestingCountries,
+                 aes(label=COUNTRY),
+                 color='blue',
+                 check_overlap = T,
+                 size=3,
+                 nudge_y = 0.15)
+```
